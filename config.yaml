@@ -1,0 +1,129 @@
+# ===== Base Trading Agent config =====
+# โหมดการเทรด: paper = จำลอง (ไม่ใช้เงินจริง) | live = จำลองธุรกรรมผ่าน Base MCP (dry-run) | live + dry_run: false = เงินจริง
+mode: paper
+
+# รอบการดึงราคา/ตัดสินใจ (วินาที) — 60 = เช็คทุก 1 นาที, ทำงาน 24 ชม.
+poll_interval_sec: 60
+
+base_currency: usd
+starting_cash: 10000        # ทุนเริ่มต้น (จำลอง) หน่วย USD
+
+data:
+  provider: coingecko       # ใช้ public API ของ CoinGecko (ไม่ต้องมี key)
+  warmup_days: 3            # ดึงราคาย้อนหลังตอนเริ่ม (ลดเหลือ 3 วันเพื่อหลีก rate limit)
+
+# เหรียญที่จะเทรด — ใช้ "CoinGecko coin id" (ดูได้จาก URL ของเหรียญใน coingecko.com)
+symbols:
+  - id: ethereum
+    name: ETH
+  - id: aerodrome-finance
+    name: AERO
+  - id: degen-base
+    name: DEGEN
+
+strategy:
+  ema_fast: 12              # เส้นค่าเฉลี่ยเร็ว
+  ema_slow: 26              # เส้นค่าเฉลี่ยช้า
+  rsi_period: 14
+  rsi_overbought: 70        # ไม่ซื้อเพิ่มเมื่อ RSI สูงกว่านี้ (ของแพง)
+  rsi_oversold: 30          # โซนน่าสะสม
+  # Phase 2: Volatility indicators
+  atr_period: 14            # ATR smoothing period (Wilder)
+  bb_period: 20             # Bollinger Bands SMA period
+  bb_std: 2.0               # Bollinger Bands standard deviation multiplier
+
+risk:
+  max_position_pct: 0.25    # ลงเงินต่อ 1 เหรียญ ได้สูงสุด 25% ของพอร์ต
+  stop_loss_pct: 0.05       # ตัดขาดทุนที่ -5%
+  take_profit_pct: 0.12     # ทำกำไรที่ +12%
+  max_drawdown_pct: 0.20    # kill switch เดิม (backward compat)
+  fee_pct: 0.003            # จำลองค่าธรรมเนียม swap + slippage รวม 0.3% ต่อขา
+
+  # Trailing stop — ป้องกันกำไรที่ได้แล้ว (Phase 1)
+  trailing_stop_pct: 0.03              # ราคาลดลง 3% จากจุดสูงสุด -> ขาย
+  trailing_stop_activate_pct: 0.05     # เริ่ม trailing เมื่อกำไร >= 5%
+
+  # Tiered circuit breakers — ตอบสนองแบบขั้นบันได (Phase 1)
+  drawdown_warn_pct: 0.10              # ลด size เหลือ 50%
+  drawdown_halt_pct: 0.15              # หยุดเปิดไม้ใหม่
+  drawdown_kill_pct: 0.20              # ขายทุกอย่าง (emergency)
+
+# ===== การเทรดจริง (Live) ผ่าน Base MCP =====
+# ยังอยู่ระหว่างพัฒนา — ทุกธุรกรรมต้องได้รับการอนุมัติจากผู้ใช้ก่อนเสมอ
+live:
+  rpc_url: https://mainnet.base.org        # Base mainnet RPC (เปลี่ยนเป็น Alchemy/Infura สำหรับ production)
+  chain_id: 8453                             # Base mainnet chain ID
+  mcp_server: https://mcp.base.org          # Base MCP server endpoint
+  dry_run: true                              # true = จำลอง (quote จริงแต่ไม่ส่ง tx) | false = เงินจริง
+  # Phase 6: Flashbots Protect — Base sequencer มี MEV resistance ในตัว สำหรับ L1 bridge ใช้ Flashbots
+  submission_rpc:
+    base_native: "https://mainnet.base.org"        # สำหรับ Base DEX swaps (sequencer ป้องกัน MEV แล้ว)
+    l1_bridge: "https://rpc.flashbots.net/fast"     # สำหรับ L1 bridge operations (Flashbots Protect)
+  approval:
+    require_user_confirmation: true          # บังคับให้ผู้ใช้อนุมัติทุกธุรกรรมก่อนส่ง
+    approval_timeout_sec: 300                # หมดเวลารออนุมัติ (5 นาที)
+    show_tx_preview: true                    # แสดงรายละเอียดธุรกรรมก่อนขออนุมัติ
+  gas:
+    max_priority_fee_gwei: 2                 # ค่า gas priority fee สูงสุด (Base L2 ต่ำ)
+    max_fee_gwei: 50                         # ค่า gas fee สูงสุด — ถ้าเกินจะไม่ทำธุรกรรม
+    gas_limit_multiplier: 1.2                # คูณ gas estimate เพิ่มเพื่อป้องกัน out-of-gas
+  slippage:
+    default_bps: 50                          # slippage เริ่มต้น 0.5% (50 basis points)
+    max_bps: 300                             # slippage สูงสุด 3% — เกินกว่านี้ยกเลิก
+    stablecoin_bps: 10                       # slippage สำหรับ stablecoin pairs 0.1%
+  tokens:
+    # ที่อยู่ของ token บน Base mainnet (checksum format)
+    WETH: "0x4200000000000000000000000000000000000006"
+    USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    AERO: "0x940181a94A35A4569E4529A3CDfB74e38FD98631"
+    DEGEN: "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed"
+  timeout_sec: 30                            # timeout สำหรับ RPC/MCP calls
+
+# ===== ชั้น Multi-Agent (LLM ผ่าน OpenRouter) =====
+# ตั้ง env: OPENROUTER_API_KEY=sk-or-...  (สมัครที่ openrouter.ai)
+# ถ้าไม่ตั้ง key -> ระบบรันแบบ deterministic ล้วน (ไม่เรียก LLM) อัตโนมัติ
+# โมเดลเป็น slug ของ OpenRouter — ดู/เปลี่ยนได้ที่ https://openrouter.ai/models
+agents:
+  enabled: true                       # เปิด/ปิดชั้น LLM ทั้งหมด
+  strategist:
+    enabled: true
+    model: qwen/qwen3.7-max            # Planner — คิดหนัก รันน้อย
+    refresh_min: 30                   # รีเฟรชมุมมองตลาดทุกกี่นาที
+  analyst:
+    enabled: true
+    model: qwen/qwen3-coder-flash      # ตีความ indicator — เร็ว รันถี่
+  risk_critic:
+    enabled: true
+    model: xiaomi/mimo-v2.5-pro        # Critic — ด่านวีโต้ มี reasoning
+    min_conviction: 0.30              # conviction ต่ำกว่านี้ -> ข้ามไม้ ไม่เรียก critic (Phase 8: ปรับตาม consensus formula ใหม่)
+
+# ===== On-Chain Signals (Phase 4) =====
+# สัญญาณจาก blockchain — ไม่ต้องมี API key ก็รันได้ (funding rate ใช้ Binance public API)
+# ใส่ key เพื่อเปิดสัญญาณเพิ่มเติม (exchange flow, whale tracking)
+onchain:
+  cryptoquant_api_key: ""             # env: CRYPTOQUANT_API_KEY — สำหรับ exchange flow signal (free tier)
+  basescan_api_key: ""                # env: BASESCAN_API_KEY — สำหรับ whale tracking
+  whale_watchlist: []                 # รายชื่อ Base addresses ที่จะติดตาม (สูงสุด 20)
+  poll_interval_min: 15               # ดึงสัญญาณ on-chain ทุกกี่นาที
+  weights:
+    exchange_flow: 0.35               # น้ำหนัก exchange flow signal
+    funding_rate: 0.35                # น้ำหนัก funding rate signal
+    whale: 0.30                       # น้ำหนัก whale accumulation signal
+
+# ===== Alerting (Phase 4) =====
+# Telegram notifications — สร้าง bot ผ่าน @BotFather แล้วใส่ token ที่นี่
+alerts:
+  enabled: false                      # เปิด/ปิดการแจ้งเตือน
+  telegram_token: ""                  # env: TELEGRAM_BOT_TOKEN
+  telegram_chat_id: ""                # env: TELEGRAM_CHAT_ID
+
+# ===== Dashboard (Phase 8) =====
+# Real-time AI Agent Dashboard — แสดง pixel art characters ที่ขยับตามสถานะ bot
+dashboard:
+  enabled: true                       # เปิด/ปิด dashboard broadcasting
+  supabase_url: "https://ohqwhnicjpjgwkgukbdu.supabase.co"  # env: SUPABASE_URL
+  supabase_key: "sb_publishable_AgiUfmRD02yb_pwa9zCeGw_lVhK7Zdo"  # env: SUPABASE_ANON_KEY
+  on_kill_switch: true                # แจ้งเมื่อ circuit breaker ทำงาน
+  on_data_stale: true                 # แจ้งเมื่อ data feed นิ่ง
+  on_emergency: true                  # แจ้งเมื่อ emergency liquidation
+  daily_summary: true                 # สรุป P&L ทุกวัน

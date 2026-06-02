@@ -1,0 +1,66 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+env/
+
+# === Node.js (Dashboard) ===
+node_modules/
+.next/
+out/
+.nuxt/
+*.tsbuildinfo
+*.local
+
+# === Environment & Secrets ===
+.env
+.env.local
+.env.*.local
+
+# === Runtime State ===
+state/
+*.log
+
+# === IDE & Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# === Claude Code ===
+.claude/
+
+# === Build & Deploy Artifacts ===
+*.tar
+*.tar.gz
+*.zip

@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #06060f;
+  --bg-secondary: #0d1117;
+  --bg-card: #111827;
+  --accent: #1e3a5f;
+  --highlight: #4ade80;
+  --text: #e2e8f0;
+  --text-dim: #64748b;
+  --green: #4ade80;
+  --red: #ef4444;
+  --yellow: #facc15;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b #0d1117;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text);
+  font-family: "Press Start 2P", "Courier New", monospace;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Pixel art rendering */
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Status dot */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+}
+
+.status-dot.idle { background: var(--text-dim); }
+
+.status-dot.working {
+  background: var(--green);
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+}
+
+.status-dot.thinking {
+  background: var(--yellow);
+  animation: blink 0.8s infinite;
+}
+
+.status-dot.error {
+  background: var(--red);
+  animation: shake 0.3s infinite;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Glow text */
+.glow {
+  text-shadow: 0 0 8px var(--highlight), 0 0 16px rgba(74, 222, 128, 0.3);
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, [role="button"] {
+  transition: all 0.15s ease;
+}
+
+/* ECharts container override */
+.echarts-container canvas {
+  border-radius: 8px;
+}
+
+/* Chat panel backdrop */
+.chat-panel {
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+/* Animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(74, 222, 128, 0.2); }
+  50% { box-shadow: 0 0 12px rgba(74, 222, 128, 0.4); }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }

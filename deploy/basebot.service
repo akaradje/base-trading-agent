@@ -1,0 +1,28 @@
+[Unit]
+Description=Base Trading Agent — Multi-agent crypto trading bot
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/basebot
+ExecStart=/usr/bin/python3 /opt/basebot/run.py run
+Restart=on-failure
+RestartSec=30
+EnvironmentFile=/opt/basebot/.env
+
+# Healthcheck — systemd watchdog: bot เขียน heartbeat ทุก cycle (60s)
+# ถ้าไม่มี heartbeat ภายใน 3 นาที → restart
+WatchdogSec=180
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/basebot/state
+
+[Install]
+WantedBy=multi-user.target
