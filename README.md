@@ -10,107 +10,113 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Realtime-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![Base Blockchain](https://img.shields.io/badge/Base-L2-0052FF?logo=ethereum&logoColor=white)](https://base.org/)
 
-บอทเทรดเหรียญคริปโตบนเชน **Base** ทำงาน **24 ชม.** ออกแบบเป็น **multi-agent** (Planner–Analyst–Critic–Executor) เริ่มที่ **paper trading** (จำลอง ไม่ใช้เงินจริง) แล้วต่อ live ทีหลังได้
+A **multi-agent** cryptocurrency trading bot for the **Base blockchain** (Coinbase L2). Runs **24/7** with a Planner–Analyst–Critic–Executor pipeline. Starts in **paper trading** mode (simulated, no real money) and can be switched to live trading later.
 
-> ⚠️ **คำเตือน:** ซอฟต์แวร์เพื่อการศึกษา/ทดลอง ไม่ใช่คำแนะนำการลงทุน คริปโตมีความเสี่ยงสูง เริ่มที่ paper trading เสมอ และอย่าใส่เงินเกินที่รับความเสียหายได้
+> ⚠️ **Disclaimer:** This is educational/experimental software, not financial advice. Crypto is highly volatile. Always start with paper trading and never invest more than you can afford to lose.
 
 ---
 
-## สถาปัตยกรรม Multi-Agent
+## Multi-Agent Architecture
 
 ```
-ราคา (CoinGecko) ─► Indicator (EMA/RSI)
+Prices (CoinGecko) ─► Indicators (EMA/RSI)
                          │
    ┌─────────────────────┴───────────────────────────────┐
    │ 0. RiskManager (deterministic): kill switch,         │
-   │    stop-loss / take-profit  ── บังคับเสมอ ──┐        │
-   │ 1. 🧭 Strategist (Planner)  regime/ความเสี่ยงรวม      │
-   │ 2. 📊 Analyst  conviction + action (จาก price action)  │
-   │ 3. 🛡️ RiskCritic (Critic)  อนุมัติ/วีโต้/ลดขนาด        │
-   │ 4. ⚙️ Executor  ยิงออเดอร์ (paper / Base)             │
+   │    stop-loss / take-profit  ── always enforced ──┐   │
+   │ 1. 🧭 Strategist (Planner)  regime/risk appetite    │
+   │ 2. 📊 Analyst  conviction + action (price action)   │
+   │ 3. 🛡️ RiskCritic (Critic)  approve/veto/shrink      │
+   │ 4. ⚙️ Executor  place orders (paper / Base)          │
    └──────────────────────────────────────────────────────┘
 ```
 
-กฎความเสี่ยงแข็ง (stop-loss, take-profit, เพดานขนาดโพซิชัน, kill switch) บังคับด้วยโค้ด **deterministic เสมอ** — LLM ได้แค่กรองออก/ลดขนาด ไม่มีทางข้ามกฎ
+Hard risk rules (stop-loss, take-profit, position caps, kill switch) are enforced by **deterministic code** — LLMs can only filter out or reduce trade size, never bypass these rules.
 
-### โมเดล (ผ่าน OpenRouter — เลือกชุดประหยัดสุด-คุ้มสุด)
+### Models (via OpenRouter — cost-optimized selection)
 
-| Agent | โมเดล | ราคา /1M (in/out) |
+| Agent | Model | Price /1M (in/out) |
 |---|---|---|
 | 🧭 Strategist | `qwen/qwen3.7-max` | ~$0.25 / $0.38 |
 | 📊 Analyst | `qwen/qwen3-coder-flash` | $0.07 / $0.26 |
 | 🛡️ RiskCritic | `xiaomi/mimo-v2.5-pro` | reasoning model |
 
-เปลี่ยนโมเดลได้ใน `config.yaml` → `agents:` (ดู slug ทั้งหมดที่ https://openrouter.ai/models)
+Change models in `config.yaml` → `agents:` (see all slugs at https://openrouter.ai/models)
 
 ---
 
-## ติดตั้ง
+## Installation
 
 ```bash
 pip install -r requirements.txt
 
-# (ไม่บังคับ) ใส่คีย์ LLM — ไม่ใส่ก็รันได้ด้วยกลยุทธ์ deterministic
+# (Optional) Add LLM key — bot runs with deterministic strategy without it
 copy .env.example .env        # Windows
-# แก้ .env ใส่ OPENROUTER_API_KEY
+# Edit .env and add OPENROUTER_API_KEY
 ```
 
-ตั้ง env var (PowerShell):
+Set env var (PowerShell):
 ```powershell
 $env:OPENROUTER_API_KEY = "sk-or-..."
 ```
 
 ---
 
-## ใช้งาน
+## Usage
 
 ```bash
-python run.py backtest --days 90   # ทดสอบกลยุทธ์ฐานกับข้อมูลย้อนหลังก่อน
-python run.py run                  # เปิดบอท paper trading 24 ชม. (Ctrl+C หยุด)
-python run.py status               # ดูสถานะพอร์ตล่าสุด
+python run.py backtest --days 90   # Backtest base strategy with historical data
+python run.py run                  # Start 24/7 paper trading bot (Ctrl+C to stop)
+python run.py status               # View latest portfolio status
 ```
 
-สถานะพอร์ตเก็บที่ `state/portfolio.json` (รันต่อจากเดิมได้หลังปิด)
+Portfolio state is saved to `state/portfolio.json` (resumes after restart).
 
 ---
 
-## ตั้งค่า (`config.yaml`)
+## Configuration (`config.yaml`)
 
-- `mode`: `paper` (จำลอง) | `live` (ยังบล็อกไว้ ต้องต่อ Base MCP ก่อน)
-- `poll_interval_sec`: รอบการเช็คราคา (เริ่ม 60s)
-- `symbols`: เหรียญที่เทรด (ใช้ **CoinGecko coin id**)
-- `strategy`: พารามิเตอร์ EMA/RSI
-- `risk`: stop-loss, take-profit, เพดานโพซิชัน, max-drawdown, ค่าธรรมเนียม
-- `agents`: เปิด/ปิด + เลือกโมเดลแต่ละ agent
-
----
-
-## ต่อ Live บน Base (ทำทีหลัง)
-
-ตอนนี้ `LiveExecutor` บล็อกไว้กันยิงเงินจริงโดยไม่ตั้งใจ วิธีต่อ:
-
-1. ติดตั้ง Base MCP: `claude mcp add --transport http base-mcp https://mcp.base.org`
-2. แก้ `basebot/executor.py` → `LiveExecutor.buy/sell` ให้เรียก swap ผ่าน Base MCP
-   (ETH/USDC ↔ token) ทุก write action จะมีลิงก์ให้ **approve ใน Base Account** ก่อนยืนยัน
-3. ตั้ง `mode: live` ใน `config.yaml`
+- `mode`: `paper` (simulated) | `live` (blocked — requires Base MCP connection)
+- `poll_interval_sec`: price check interval (default 60s)
+- `symbols`: coins to trade (use **CoinGecko coin id**)
+- `strategy`: EMA/RSI parameters
+- `risk`: stop-loss, take-profit, position caps, max-drawdown, fees
+- `agents`: enable/disable + select model for each agent
 
 ---
 
-## โครงสร้าง
+## Going Live on Base (Future)
+
+Currently `LiveExecutor` is blocked to prevent accidental real-money trades. To enable:
+
+1. Install Base MCP: `claude mcp add --transport http base-mcp https://mcp.base.org`
+2. Edit `basebot/executor.py` → `LiveExecutor.buy/sell` to call swaps via Base MCP
+   (ETH/USDC ↔ token) — every write action includes an **approve link in Base Account** before confirmation
+3. Set `mode: live` in `config.yaml`
+
+---
+
+## Project Structure
 
 ```
 run.py                  CLI (run / backtest / status)
-config.yaml             ตั้งค่าทั้งหมด
+config.yaml             All configuration
 basebot/
-  config.py             โหลด config
-  data.py               ดึงราคา CoinGecko
+  config.py             Load config
+  data.py               CoinGecko price fetcher
   indicators.py         EMA / RSI / crossover
-  portfolio.py          พอร์ตจำลอง + persistence
-  risk.py               กฎความเสี่ยง deterministic
+  portfolio.py          Simulated portfolio + persistence
+  risk.py               Deterministic risk rules
   executor.py           Paper / Live executor
-  llm.py                เชื่อม OpenRouter (OpenAI-compatible)
-  orchestrator.py       ประสาน agents (Planner→Analyst→Critic→Executor)
-  engine.py             ลูป 24 ชม.
-  backtest.py           ทดสอบย้อนหลัง
+  llm.py                OpenRouter client (OpenAI-compatible)
+  orchestrator.py       Agent coordination (Planner→Analyst→Critic→Executor)
+  engine.py             24/7 trading loop
+  backtest.py           Historical backtesting
   agents/               strategist, analyst, risk_critic
 ```
+
+---
+
+## License
+
+[MIT](LICENSE)
