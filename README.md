@@ -1,5 +1,15 @@
 # Base Trading Agent 🤖
 
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/akaradje/base-trading-agent?style=social)](https://github.com/akaradje/base-trading-agent/stargazers)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/akaradje/base-trading-agent)](https://github.com/akaradje/base-trading-agent/commits)
+[![GitHub Issues](https://img.shields.io/github/issues/akaradje/base-trading-agent)](https://github.com/akaradje/base-trading-agent/issues)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](deploy/Dockerfile)
+[![Supabase](https://img.shields.io/badge/Supabase-Realtime-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Base Blockchain](https://img.shields.io/badge/Base-L2-0052FF?logo=ethereum&logoColor=white)](https://base.org/)
+
 บอทเทรดเหรียญคริปโตบนเชน **Base** ทำงาน **24 ชม.** ออกแบบเป็น **multi-agent** (Planner–Analyst–Critic–Executor) เริ่มที่ **paper trading** (จำลอง ไม่ใช้เงินจริง) แล้วต่อ live ทีหลังได้
 
 > ⚠️ **คำเตือน:** ซอฟต์แวร์เพื่อการศึกษา/ทดลอง ไม่ใช่คำแนะนำการลงทุน คริปโตมีความเสี่ยงสูง เริ่มที่ paper trading เสมอ และอย่าใส่เงินเกินที่รับความเสียหายได้
